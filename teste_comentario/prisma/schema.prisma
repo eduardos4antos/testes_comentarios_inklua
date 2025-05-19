@@ -1,0 +1,161 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model categoria {
+  id_categoria    Int               @id @default(autoincrement())
+  nome            String?           @db.VarChar(50)
+  contem_pertence contem_pertence[]
+}
+
+model cliente {
+  id_cliente          Int                   @id @default(autoincrement())
+  nome                String?               @db.VarChar(200)
+  imagem              String?
+  banner              String?
+  biografia           String?
+  email               String?               @unique @db.VarChar(254)
+  telefone            String?               @db.VarChar(20)
+  senha               String?               @db.VarChar(255)
+  data_criacao        DateTime?             @default(now()) @db.Timestamp(6)
+  inklua_coins        Int                   @default(0)
+  comentario          comentario[]
+  compra_pertence_a   compra_pertence_a[]
+  configuracao_visual configuracao_visual[]
+}
+
+model comentario {
+  id_comentario         Int       @id @default(autoincrement())
+  comentario            String?
+  data_criacao          DateTime? @default(now()) @db.Timestamp(6)
+  fk_cliente_id_cliente Int?
+  fk_evento_id_evento   Int?
+  cliente               cliente?  @relation(fields: [fk_cliente_id_cliente], references: [id_cliente], onDelete: Cascade, onUpdate: NoAction)
+  evento                evento?   @relation(fields: [fk_evento_id_evento], references: [id_evento], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([fk_cliente_id_cliente], map: "idx_fk_cliente_id")
+}
+
+model compra_pertence_a {
+  fk_cliente_id_cliente   Int
+  fk_ingresso_id_ingresso Int
+  cliente                 cliente  @relation(fields: [fk_cliente_id_cliente], references: [id_cliente], onDelete: Cascade, onUpdate: NoAction)
+  ingresso                ingresso @relation(fields: [fk_ingresso_id_ingresso], references: [id_ingresso], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([fk_cliente_id_cliente, fk_ingresso_id_ingresso])
+  @@index([fk_cliente_id_cliente, fk_ingresso_id_ingresso], map: "idx_fk_cliente_evento")
+}
+
+model configuracao_visual {
+  id_config        Int        @id @default(autoincrement())
+  codigo_alteracao String?    @unique @db.VarChar(255)
+  value            Int?
+  nome_select      String?    @db.VarChar(50)
+  fk_id_cliente    Int?
+  fk_id_moderador  Int?
+  cliente          cliente?   @relation(fields: [fk_id_cliente], references: [id_cliente], onDelete: Cascade, onUpdate: NoAction)
+  moderador        moderador? @relation(fields: [fk_id_moderador], references: [id_moderador], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model empresa {
+  id_empresa   Int       @id @default(autoincrement())
+  nome         String?   @db.VarChar(255)
+  logo         String?
+  banner       String?
+  sobre        String?
+  slug         String?   @unique @db.VarChar(255)
+  email        String?   @unique @db.VarChar(254)
+  telefone     String?   @db.VarChar(20)
+  senha        String?   @db.VarChar(255)
+  cnpj         String?   @unique @db.VarChar(20)
+  data_criacao DateTime? @default(now()) @db.Timestamp(6)
+  evento       evento[]
+}
+
+model evento {
+  id_evento             Int                  @id @default(autoincrement())
+  nome                  String?              @db.VarChar(100)
+  data_inicio           DateTime?            @db.Date
+  data_fim              DateTime?            @db.Date
+  descricao             String?
+  imagem                String?
+  capacidade            Int?
+  cep                   String?              @db.VarChar(10)
+  uf                    String?              @db.VarChar(2)
+  cidade                String?              @db.VarChar(100)
+  bairro                String?              @db.VarChar(100)
+  logradouro            String?              @db.VarChar(100)
+  complemento           String?              @db.VarChar(100)
+  numero                String?              @db.VarChar(10)
+  destaque              Boolean?             @default(false)
+  slug                  String?              @unique @db.VarChar(255)
+  fk_empresa_id_empresa Int?
+  comentario            comentario[]
+  empresa               empresa?             @relation(fields: [fk_empresa_id_empresa], references: [id_empresa], onDelete: Cascade, onUpdate: NoAction)
+  ingresso              ingresso[]
+  contem_pertence       contem_pertence[]
+  pertence_associada    pertence_associada[]
+
+  @@index([fk_empresa_id_empresa], map: "idx_fk_empresa_evento")
+}
+
+model hashtag {
+  id_hashtag Int     @id @default(autoincrement())
+  nome       String? @db.VarChar(150)
+
+  pertence_associada pertence_associada[]
+}
+
+model ingresso {
+  id_ingresso         Int                 @id @default(autoincrement())
+  codigo_ingresso     String?             @unique @db.VarChar(20)
+  nome                String?             @db.VarChar(300)
+  quantidade          Int?
+  valor_receber       Decimal?            @db.Decimal(10, 2)
+  valor_comprador     Decimal?            @db.Decimal(10, 2)
+  data_inicio         DateTime?           @db.Date
+  tipo                String?             @db.VarChar(100)
+  meia_entrada        Boolean?
+  modalidade          String?             @db.VarChar(100)
+  descricao           String?
+  quantidade_compra   Int?
+  fk_evento_id_evento Int?
+  compra_pertence_a   compra_pertence_a[]
+  evento              evento?             @relation(fields: [fk_evento_id_evento], references: [id_evento], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([fk_evento_id_evento], map: "idx_fk_evento_id")
+}
+
+model moderador {
+  id_moderador        Int                   @id @default(autoincrement())
+  nome                String?               @db.VarChar(255)
+  email               String?               @unique @db.VarChar(254)
+  telefone            String?               @db.VarChar(20)
+  senha               String?               @db.VarChar(255)
+  data_criacao        DateTime?             @default(now()) @db.Timestamp(6)
+  configuracao_visual configuracao_visual[]
+}
+
+model pertence_associada {
+  fk_id_evento  Int
+  fk_id_hashtag Int
+  evento        evento  @relation(fields: [fk_id_evento], references: [id_evento], onDelete: NoAction, onUpdate: NoAction)
+  hashtag       hashtag @relation(fields: [fk_id_hashtag], references: [id_hashtag], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([fk_id_evento, fk_id_hashtag])
+}
+
+model contem_pertence {
+  fk_id_categoria Int
+  fk_id_evento    Int
+  categoria       categoria @relation(fields: [fk_id_categoria], references: [id_categoria], onDelete: NoAction, onUpdate: NoAction)
+  evento          evento    @relation(fields: [fk_id_evento], references: [id_evento], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([fk_id_categoria, fk_id_evento])
+}
